@@ -1,0 +1,124 @@
+import json, requests
+
+def ask_stamp_xscope(
+    question: str,
+    endpoint: str = 'databricks-claude-sonnet-4-5',
+    top_k_each: int = 6
+):
+    q = question or ""
+
+    try:
+        version = latest_stamp_version()
+    except Exception:
+        version = None
+    
+    try:
+        product = infer_product(q)
+    except Exception:
+        product = None
+
+    e_rows = retrieve_top_chunks(
+        question=q,
+        stamp_family='E',
+        stamp_product=product,
+        stamp_version=version,
+        top_k=top_k_each
+    )
+
+    i_rows = retrieve_top_chunks(
+        question=q,
+        stamp_family='I',
+        stamp_product='All',
+        stamp_version=version,
+        top_k=top_k_each
+    )
+
+    m_rows = retrieve_top_chunks(
+        question=q,
+        stamp_family='M',
+        stamp_product='All',
+        stamp_version=version,
+        top_k=top_k_each
+    )
+
+    e_chunks = _rows_to_chunks(e_rows, "E")
+    i_chunks = _rows_to_chunks(i_rows, "I")
+    m_chunks = _rows_to_chunks(m_rows, "M")
+
+    e_themes = extract_themes_per_product("E", e_chunks, llm_call_fn)
+    i_themes = extract_themes_per_product("I", i_chunks, llm_call_fn)
+    m_themes = extract_themes_per_product("M", m_chunks, llm_call_fn)
+
+    def pack_sources(rows, label):
+        blocks = []
+        citations = []
+        for i, r in enumerate(rows, start=1):
+            blocks.append( f"""SOURCE {i}
+                STAMP: {r['stamp_name']} | Family={r['stamp_family']} Product={r['stamp_product']} Version={r['stamp_version']}
+                ORG: installation={r['installation'] or "None"} majcom={r['majcom'] or "None"}
+                PAGE: {r['page_num']} | FIGURES: {r['figure_refs'] or "none"}
+                TEXT: 
+                {r['chunk_text']}"""
+                )
+
+            citations.append({
+                "source_id": i,
+                "stamp_name": r['stamp_name'],
+                "stamp_family": r['stamp_family'],
+                "stamp_product": r['stamp_product'],
+                "stamp_version": r['stamp_version'],
+                'installation': r['installation'],
+                'majcom': r['majcom'],
+                "page_num": int(r['page_num']) if r['page_num'] is not None else None,
+                "figure_refs": r['figure_refs'],
+                "source_pdf_path": r['source_pdf_path'],
+            }) 
+        
+        return blocks, citations
+    
+    e_blocks, e_cites = pack_sources(e_rows, "E")
+    i_blocks, i_cites = pack_sources(i_rows, "I")
+    m_blocks, m_cites = pack_sources(m_rows, "M")
+
+    all_blocks = e_blocks + i_blocks + m_blocks
+    all_citations = e_cites + i_cites + m_cites
+
+    if len(all_blocks) == 0:
+        return {
+            "answer": "Not supported by the STAMPS",
+            "citations": [],
+            "debug": {"version": version, "product": product}
+        }
+
+    ctx = dbutils.notebook.entry_point.getDbutils().notebook().getContext()
+    host = "https://" + ctx.browserHostName().get()
+    url = f"{host}/serving-endpoints/{endpoint}/invocations"
+    headers = {
+        "Authorization": f"Bearer {ctx.apiToken().get()}",
+        "Content-Type": "application/json"
+    }
+
+    prompt = f"""INSTRUCTION (MUST FOLLOW)
+    - You may only use the provided sources to answer
+    - If the answer is not supported by sources, say: "Information not available in STAMP.
+    - Provide citations as (p.<page_num>) and if applicable include figure lables like (p. <page_num>, Figure X)
+    - Keep it leadership friendly: concise, direct, and evidence-backed
+    
+    QUESTION:
+    {question}
+    
+    SOURCES:
+    {chr(10).join(all_blocks)}
+    """
+
+    payload = {"messages": [{"role": "user", "content": prompt}], "temperature": 0.2, "max_tokens": 1100}
+    resp = requests.post(url, headers=headers, data=json.dumps(payload))
+    data = resp if isinstance(resp, dict) else resp.json()
+
+    answer = data['choices'][0]['message']['content']
+
+    return {
+        "answer": answer,
+        "citations": all_citations,
+        "debug": {"version": version, "product": product, "counts": {"E": len(e_rows), "I": len(i_rows), "M": len(m_rows)}}
+    }
