@@ -1,0 +1,55 @@
+Excerpt around error (pos 6519)
+as a subcategory?",
+      "What specific data sources exist for utilities condition assessment across Air Force installations?",
+      "Is there a separate utilities-focused STAMP product or module not captured in the I, M, and E families?"
+    ]
+  }
+
+Raw output (first 1200 chars)
+```json
+{
+  "schema_version": "2.5",
+  "run_id": "2026-02-11T17:29:41Z__ed81da",
+  "question": "What utilitites condition data exists across STAMP products?",
+  "retrieval_summary": {
+    "families_considered": [
+      "E",
+      "I",
+      "M"
+    ],
+    "chunks_used": 12,
+    "coverage_by_family": {
+      "E": 0,
+      "I": 6,
+      "M": 6
+    }
+  },
+  "claims": [
+    {
+      "claim_id": "C1",
+      "claim_text": "I-STAMP does not contain specific utilities condition data. The data sources referenced include RPA Export, PAVER, BUILDER, RAILER, and FHWA Bridge Report, which focus on transportation infrastructure, pavements, buildings, rail, and bridges rather than utilities systems.",
+      "claim_type": "factual",
+      "stamp_families": [
+        "I"
+      ],
+      "confidence": "high",
+      "support": [
+        {
+          "citation_id": "S1",
+          "excerpt": "Data sources for transportation and airfield infrastructure assessment include RPA Export, PAVER, BUILDER, RAILER, and FHWA Bridge Report from 2025.",
+          "relevance": "direct"
+        },
+        {
+          "citation_id": "S2",
+          "excerpt": "Data sources for transportation and airfield infrastructure 
+File <command-5522249380927693>, line 33, in safe_json_loads(s)
+     32 try:
+---> 33     return json.loads(candidate)
+     34 except json.JSONDecodeError:
+File <command-5522249380927693>, line 46, in safe_json_loads(s)
+     44 end = min(e.pos + 250, len(repaired))
+     45 excerpt = repaired[start:end]
+---> 46 raise ValueError(
+     47     f"LLM return invalid JSON\n"
+     48     f"Excerpt around error (pos {e.pos})\n{excerpt}\n\n"
+     49     f"Raw output (first 1200 chars)\n{txt[:1200]}")
