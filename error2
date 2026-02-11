@@ -1,0 +1,53 @@
+ValueError: LLM return invalid JSON
+Excerpt around error (pos 5177)
+itation_id": "S11",
+      "stamp_family": "M",
+      "stamp_product": "All",
+      "stamp_version": "SEP2025",
+      "page": 1,
+      "chunk_id": "15f97d4d8ca9483e8c09520fd60051f8",
+      "document_title": "M-STAMP - Built Infrastructure - All"
+    }
+
+Raw output (first 1200 chars)
+```json
+{
+  "schema_version": "2.5",
+  "run_id": "2026-02-11T17:34:51Z__91c314",
+  "question": "What utilitites condition data exists across STAMP products?",
+  "retrieval_summary": {
+    "families_considered": [
+      "E",
+      "I",
+      "M"
+    ],
+    "chunks_used": 12,
+    "coverage_by_family": {
+      "E": 0,
+      "I": 6,
+      "M": 6
+    }
+  },
+  "claims": [],
+  "synthesis": {
+    "executive_summary": {
+      "text": "No evidence was found regarding utilities condition data across STAMP products. The retrieved evidence focuses on transportation infrastructure, airfield pavements, buildings, rail systems, and bridges, but does not address utilities systems or utilities condition tracking.",
+      "derived_from_claims": []
+    },
+    "key_points": [
+      "The I-STAMP product integrates condition data from PAVER, BUILDER, RAILER, and FHWA Bridge Report systems, but these focus on pavements, buildings, rail, and bridges rather than utilities",
+      "M-STAMP references facilities portfolio data but does not specifically mention utilities condition data",
+      "No evidence was found in E-STAMP products regarding utilities condition data"
+    ],
+    "recommended_next_questions"
+File <command-5522249380927693>, line 33, in safe_json_loads(s)
+     32 try:
+---> 33     return json.loads(candidate)
+     34 except json.JSONDecodeError:
+File <command-5522249380927693>, line 46, in safe_json_loads(s)
+     44 end = min(e.pos + 250, len(repaired))
+     45 excerpt = repaired[start:end]
+---> 46 raise ValueError(
+     47     f"LLM return invalid JSON\n"
+     48     f"Excerpt around error (pos {e.pos})\n{excerpt}\n\n"
+     49     f"Raw output (first 1200 chars)\n{txt[:1200]}")
